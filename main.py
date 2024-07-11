@@ -18,7 +18,9 @@ else:
 # hyperparameters ====================================================
 batch_size = 4
 block_size = 8
-epoch = 10000
+max_iters = 3000
+eval_interval = 300
+eval_iters = 200
 lr = 1e-3
 
 # setting up data ====================================================
@@ -34,7 +36,26 @@ model = BigramLanguageModel(vocab_size).to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr)
 
 # training loop ======================================================
-for _ in tqdm(range(epoch)):
+def estimate_loss(model, data_train, data_val):
+    out = {}
+    splits = {'train' : data_train, 'val' : data_val}
+    model.eval()
+    for split in splits:
+        losses = torch.zeros(eval_iters)
+        for k in range(eval_iters):
+            X, Y = get_batch(splits[split], block_size, batch_size)
+            logits, loss = model(X, Y)
+            losses[k] = loss.item()
+        out[split] = losses.mean()
+    model.train()
+    return out
+
+# for it in tqdm(range(max_iters)):
+for it in range(max_iters):
+    if(it % eval_interval == 0):
+        losses = estimate_loss(model, train_data, val_data)
+        print(f"step {it}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+
     xb, yb = get_batch(train_data, block_size, batch_size)
     xb, yb = xb.to(device), yb.to(device)
     logits, loss = model(xb, yb)
@@ -50,3 +71,4 @@ seed = 'dear'
 seed_encoded = torch.tensor([encode(seed)]).to(device)
 result = model.generate(seed_encoded, 100)
 print(decode(result[0].tolist()))
+
