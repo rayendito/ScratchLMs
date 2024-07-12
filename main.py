@@ -18,10 +18,11 @@ else:
 # hyperparameters ====================================================
 batch_size = 4
 block_size = 8
-max_iters = 3000
-eval_interval = 300
+max_iters = 1000
+eval_interval = 100
 eval_iters = 200
 lr = 1e-3
+embedding_size = 32
 
 # setting up data ====================================================
 text, chars, vocab_size, encode, decode = text_chars_vocabsz_enc_dec(data_path)
@@ -32,7 +33,7 @@ train_data = data[:n]
 val_data = data[n:]
 
 # model and optimizers ===============================================
-model = BigramLanguageModel(vocab_size).to(device)
+model = BigramLanguageModel(vocab_size, embedding_size, block_size).to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr)
 
 # training loop ======================================================
@@ -64,10 +65,8 @@ for it in range(max_iters):
     loss.backward()
     optimizer.step()
 
-print('last epoch loss is', loss.item())
-
 # inference ==========================================================
-seed = 'dear'
+seed = 'H'
 seed_encoded = torch.tensor([encode(seed)]).to(device)
 result = model.generate(seed_encoded, 100)
 print(decode(result[0].tolist()))

@@ -4,13 +4,21 @@ from torch.nn import functional as F
 
 
 class BigramLanguageModel(nn.Module):
-  def __init__(self, vocab_size):
+  def __init__(self, vocab_size, embedding_size, block_size):
     super().__init__()
-    self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)
+    self.token_embedding_table = nn.Embedding(vocab_size, embedding_size)
+    self.position_embedding_table = nn.Embedding(block_size, embedding_size)
+    self.lm_head = nn.Linear(embedding_size, vocab_size)
+    self.block_size = block_size
 
   def forward(self, idx, targets=None):
-    logits = self.token_embedding_table(idx)
+    B, T = idx.shape
 
+    vocab_embd_output = self.token_embedding_table(idx) # B T C
+    positional_embd = self.position_embedding_table(torch.arange(T)) # T C
+    x = vocab_embd_output + positional_embd
+    logits = self.lm_head(x)
+    pass
     if targets is None:
       loss = None
     else:
@@ -27,7 +35,7 @@ class BigramLanguageModel(nn.Module):
     # idx is the current sentence
     # max_new_tokens is how much you want it to yap
     for _ in range(max_new_tokens):
-      logits, loss = self(idx)
+      logits, loss = self(idx[:, -self.block_size:])
       logits = logits[:, -1, :]
       probs = F.softmax(logits, dim=-1)
       idx_next = torch.multinomial(probs, num_samples=1)
