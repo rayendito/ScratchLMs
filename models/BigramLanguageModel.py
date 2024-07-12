@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
+head_size = 16
 
 class BigramLanguageModel(nn.Module):
   def __init__(self, vocab_size, embedding_size, block_size):
@@ -9,6 +10,10 @@ class BigramLanguageModel(nn.Module):
     self.token_embedding_table = nn.Embedding(vocab_size, embedding_size)
     self.position_embedding_table = nn.Embedding(block_size, embedding_size)
     self.lm_head = nn.Linear(embedding_size, vocab_size)
+
+    self.query_layer = nn.Linear(embedding_size, head_size, bias=False)
+    self.key_layer = nn.Linear(embedding_size, head_size, bias=False)
+
     self.block_size = block_size
 
   def forward(self, idx, targets=None):
@@ -16,7 +21,20 @@ class BigramLanguageModel(nn.Module):
 
     vocab_embd_output = self.token_embedding_table(idx) # B T C
     positional_embd = self.position_embedding_table(torch.arange(T)) # T C
-    x = vocab_embd_output + positional_embd
+    x = vocab_embd_output + positional_embd # B T C
+
+    B, T, C = x.shape
+
+    keys = self.key_layer(x) # B T head_size
+    queries = self.query_layer(x) # B T head_size
+
+    attention_mask = torch.tril(torch.ones(T,T))
+    weights = queries @ keys.transpose(1,2)
+    weights = weights.masked_fill(attention_mask == 0, float('-inf')) # T T
+    weights = F.softmax(weights, dim=-1)
+
+    x = weights @ x
+
     logits = self.lm_head(x)
     pass
     if targets is None:
