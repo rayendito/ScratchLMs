@@ -18,7 +18,7 @@ else:
 # hyperparameters ====================================================
 batch_size = 4
 block_size = 8
-max_iters = 1000
+max_iters = 1500
 eval_interval = 100
 eval_iters = 200
 lr = 1e-4
@@ -67,7 +67,7 @@ for it in range(max_iters):
 
 # inference ==========================================================
 # todo: padding to context length function
-seed = 'Shakespeare'
+seed = 'Becometh'
 seed_encoded = torch.tensor([encode(seed)]).to(device)
 result = model.generate(seed_encoded, 100)
 print(decode(result[0].tolist()))

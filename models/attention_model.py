@@ -8,6 +8,7 @@ from torch.nn import functional as F
 
 EMBEDDING_SIZE = 32
 N_HEADS = 8 # ATT_HEAD_SIZE * N_HEADS has to be = EMBEDDING_SIZE
+N_ATTN_BLOCKS = 3
 NORM_BIAS = False
 DROPOUT = 0.0
 
@@ -95,7 +96,7 @@ class nanoGPT(nn.Module):
     super().__init__()
     self.token_embedding_table = nn.Embedding(vocab_size, EMBEDDING_SIZE)
     self.position_embedding_table = nn.Embedding(block_size, EMBEDDING_SIZE)
-    self.block = Block(block_size)
+    self.attn_blocks =  [Block(block_size) for _ in range(N_ATTN_BLOCKS)]
     self.lm_head = nn.Linear(EMBEDDING_SIZE, vocab_size)
     # self.self_attention = CausalSelfAttention(block_size)
     self.block_size = block_size
@@ -106,7 +107,9 @@ class nanoGPT(nn.Module):
     vocab_embd_output = self.token_embedding_table(idx) # B T C
     positional_embd = self.position_embedding_table(torch.arange(T)) # T C
     x = vocab_embd_output + positional_embd # B T C
-    x = self.block(x) # B T C
+    # x = self.block(x) # B T C
+    for block in self.attn_blocks:
+      x = block(x)
     logits = self.lm_head(x)
   
     if targets is None:
