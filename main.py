@@ -1,5 +1,5 @@
 from tqdm import tqdm
-from models.BigramLanguageModel import BigramLanguageModel
+from models.attention_model import nanoGPT
 from utils.data_utils import *
 
 torch.manual_seed(1337)
@@ -21,8 +21,8 @@ block_size = 8
 max_iters = 1000
 eval_interval = 100
 eval_iters = 200
-lr = 1e-3
-embedding_size = 32
+lr = 1e-4
+
 
 # setting up data ====================================================
 text, chars, vocab_size, encode, decode = text_chars_vocabsz_enc_dec(data_path)
@@ -33,7 +33,7 @@ train_data = data[:n]
 val_data = data[n:]
 
 # model and optimizers ===============================================
-model = BigramLanguageModel(vocab_size, embedding_size, block_size).to(device)
+model = nanoGPT(vocab_size, block_size).to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr)
 
 # training loop ======================================================
@@ -66,7 +66,8 @@ for it in range(max_iters):
     optimizer.step()
 
 # inference ==========================================================
-seed = 'H'
+# todo: padding to context length function
+seed = 'HHHHHHHH'
 seed_encoded = torch.tensor([encode(seed)]).to(device)
 result = model.generate(seed_encoded, 100)
 print(decode(result[0].tolist()))
