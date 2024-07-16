@@ -67,7 +67,7 @@ for it in range(max_iters):
 
 # inference ==========================================================
 # todo: padding to context length function
-seed = 'HHHHHHHH'
+seed = 'Shakespeare'
 seed_encoded = torch.tensor([encode(seed)]).to(device)
 result = model.generate(seed_encoded, 100)
 print(decode(result[0].tolist()))
