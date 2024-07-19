@@ -43,5 +43,22 @@ class RNN(nn.Module):
 
         return logits, loss
 
-    def generate(self, x, max_new_tokens):
-        pass
+    def generate(self, idx, max_new_tokens):
+        # resetting them hidden states
+        self.recurrent.reset_hidden_states()
+
+        # shep
+        B, T = idx.shape
+
+        # setting up the hidden states
+        logits, loss = self(idx)
+
+        # generating the words one by one
+        for _ in range(max_new_tokens):
+            logits, loss = self(idx[:, -1].view(B, 1))
+            logits = logits[:, -1, :]
+            probs = F.softmax(logits, dim=-1)
+            idx_next = torch.multinomial(probs, num_samples=1)
+            idx = torch.cat((idx, idx_next), dim=1)
+        
+        return idx

@@ -37,3 +37,9 @@ model = RNN(config)
 for i in range(max_iters):
     xb, yb = get_batch(train_data, config.context_length, batch_size)
     logits, loss = model(xb,yb)
+
+# generation =========================================================
+seed = 'Becometh'
+seed_encoded = torch.tensor([encode(seed)])
+result = model.generate(seed_encoded, 10)
+print(decode(result[0].tolist()))
