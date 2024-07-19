@@ -39,7 +39,10 @@ for i in range(max_iters):
     logits, loss = model(xb,yb)
 
 # generation =========================================================
-seed = 'Becometh'
-seed_encoded = torch.tensor([encode(seed)])
+seed1 = 'Becometh'
+seed2 = 'Proficie'
+seed_encoded = torch.tensor([encode(seed1), encode(seed2)])
 result = model.generate(seed_encoded, 10)
 print(decode(result[0].tolist()))
+print("-----")
+print(decode(result[1].tolist()))

@@ -51,12 +51,18 @@ class RNN(nn.Module):
         B, T = idx.shape
 
         # setting up the hidden states
-        logits, loss = self(idx)
+        # initializa only up until the last_token - 1
+        logits, loss = self(idx[:, :-1])
 
         # generating the words one by one
         for _ in range(max_new_tokens):
-            logits, loss = self(idx[:, -1].view(B, 1))
+            
+            # feeding only the last token to generate the next one
+            # unlike attention which has to look at the preceeding words again
+            # representation is already in the hidden states
+            logits, loss = self(idx[:, -1:])
             logits = logits[:, -1, :]
+
             probs = F.softmax(logits, dim=-1)
             idx_next = torch.multinomial(probs, num_samples=1)
             idx = torch.cat((idx, idx_next), dim=1)
