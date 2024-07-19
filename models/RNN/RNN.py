@@ -8,6 +8,7 @@ from .RecurrentLayer import RecurrentLayer
 class RNN(nn.Module):
     def __init__(self, config):
         super().__init__()
+        self.config = config
         self.token_embedding = nn.Embedding(config.vocab_size, config.embedding_size)
         self.recurrent = RecurrentLayer(config)
         self.lm_head = nn.Linear(config.embedding_size, config.vocab_size)
@@ -47,9 +48,6 @@ class RNN(nn.Module):
         # resetting them hidden states
         self.recurrent.reset_hidden_states()
 
-        # shep
-        B, T = idx.shape
-
         # setting up the hidden states
         # initializa only up until the last_token - 1
         logits, loss = self(idx[:, :-1])
@@ -58,7 +56,7 @@ class RNN(nn.Module):
         for _ in range(max_new_tokens):
             
             # feeding only the last token to generate the next one
-            # unlike attention which has to look at the preceeding words again
+            # unlike attention which has to look at the preceeding tokens of context length again
             # representation is already in the hidden states
             logits, loss = self(idx[:, -1:])
             logits = logits[:, -1, :]

@@ -71,9 +71,10 @@ for it in range(max_iters):
     xb, yb = xb.to(device), yb.to(device)
     logits, loss = model(xb, yb)
     
-    optimizer.zero_grad(set_to_none = True)
     loss.backward()
     optimizer.step()
+    
+    optimizer.zero_grad(set_to_none = True)
 
 # inference ==========================================================
 # todo: padding to context length function

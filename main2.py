@@ -3,11 +3,23 @@ from models.RNN.RNN import RNN
 from utils.data_utils import *
 from utils.config import Config
 
+# variables ==========================================================
 data_path = 'input.txt'
 
-# variables ==========================================================
+if(torch.cuda.is_available()):
+    device = 'cuda'
+# MPS currently is still slower than CPUs?
+# elif(torch.backends.mps.is_available()):
+#     device = 'mps'
+else:
+    device = 'cpu'
+
+# hyperparams ==========================================================
 batch_size = 4
-max_iters = 3
+max_iters = 1500
+eval_interval = 100
+eval_iters = 200
+lr = 3e-4
 
 # setting up data ====================================================
 text, chars, vocab_size, encode, decode = text_chars_vocabsz_enc_dec(data_path)
@@ -32,17 +44,41 @@ config = Config(
 
 # MODEL ==============================================================
 model = RNN(config)
+optimizer = torch.optim.AdamW(model.parameters(), lr)
 
 # training loop ======================================================
+def estimate_loss(model, data_train, data_val):
+    out = {}
+    splits = {'train' : data_train, 'val' : data_val}
+    model.eval()
+    for split in splits:
+        losses = torch.zeros(eval_iters)
+        for k in range(eval_iters):
+            X, Y = get_batch(splits[split], config.context_length, batch_size)
+            logits, loss = model(X, Y)
+            losses[k] = loss.item()
+        out[split] = losses.mean()
+    model.train()
+    return out
+
+
 for i in range(max_iters):
+    if(i % eval_interval == 0):
+        losses = estimate_loss(model, train_data, val_data)
+        print(f"step {i}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+
     xb, yb = get_batch(train_data, config.context_length, batch_size)
+    xb, yb = xb.to(device), yb.to(device)
     logits, loss = model(xb,yb)
+    
+    loss.backward()
+    optimizer.step()
+
+    optimizer.zero_grad(set_to_none = True)
+
 
 # generation =========================================================
 seed1 = 'Becometh'
-seed2 = 'Proficie'
-seed_encoded = torch.tensor([encode(seed1), encode(seed2)])
+seed_encoded = torch.tensor([encode(seed1)])
 result = model.generate(seed_encoded, 10)
 print(decode(result[0].tolist()))
-print("-----")
-print(decode(result[1].tolist()))
