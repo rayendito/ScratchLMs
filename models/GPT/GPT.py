@@ -24,7 +24,7 @@ class GPT(nn.Module):
     vocab_embd_output = self.token_embedding_table(idx) # B T C
     positional_embd = self.position_embedding_table(torch.arange(T)) # T C
     x = vocab_embd_output + positional_embd # B T C
-    # x = self.block(x) # B T C
+    
     for block in self.attn_blocks:
       x = block(x)
     logits = self.lm_head(x)

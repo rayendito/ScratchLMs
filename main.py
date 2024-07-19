@@ -1,5 +1,5 @@
 # from modules.attention_model import nanoGPT
-from modules.GPT import GPT
+from models.GPT.GPT import GPT
 from utils.data_utils import *
 from utils.config import Config
 
