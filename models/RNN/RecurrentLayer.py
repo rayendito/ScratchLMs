@@ -6,7 +6,7 @@ class RecurrentLayer(nn.Module):
     def __init__(self, config):
         super().__init__()
         # idk i cameup with this resizing myself lol
-        self.hidden_size = config.embedding_size*3
+        self.hidden_size = config.embedding_size*2 # i think my model overfits very fast with this one lol
         self.hidden_state = None
 
         self.input_weights = nn.Linear(config.embedding_size, self.hidden_size)

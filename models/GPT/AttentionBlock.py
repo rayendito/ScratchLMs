@@ -1,7 +1,7 @@
 import torch.nn as nn
-from .MLP import MLP
 from .CausalSelfAttention import CausalSelfAttention
-from .LayerNorm import LayerNorm
+from models.general_layers.MLP import MLP
+from models.general_layers.LayerNorm import LayerNorm
 
 class Block(nn.Module):
   def __init__(self, config):

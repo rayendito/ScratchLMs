@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
-from .Block import Block
+from .AttentionBlock import Block
 
 class GPT(nn.Module):
   def __init__(self, config):
@@ -15,7 +15,7 @@ class GPT(nn.Module):
     self.config = config
     self.token_embedding_table = nn.Embedding(config.vocab_size, config.embedding_size)
     self.position_embedding_table = nn.Embedding(config.context_length, config.embedding_size)
-    self.attn_blocks =  [Block(config) for _ in range(config.n_attn_blocks)]
+    self.attn_blocks =  [Block(config) for _ in range(config.n_blocks)]
     self.lm_head = nn.Linear(config.embedding_size, config.vocab_size)
 
   def forward(self, idx, targets=None):

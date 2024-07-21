@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-from .RecurrentLayer import RecurrentLayer
+from .RecurrentBlock import RecurrentBlock
 
 
 # generative RNN
@@ -10,7 +10,7 @@ class RNN(nn.Module):
         super().__init__()
         self.config = config
         self.token_embedding = nn.Embedding(config.vocab_size, config.embedding_size)
-        self.recurrent = RecurrentLayer(config)
+        self.recurrent_blocks = [RecurrentBlock(config) for _ in range(config.n_blocks)]
         self.lm_head = nn.Linear(config.embedding_size, config.vocab_size)
 
     def forward(self, idx, targets=None):
@@ -23,13 +23,15 @@ class RNN(nn.Module):
         
         # we don't want to carry over information from completely diff sentences.
         # so reset the hidden states first
-        self.recurrent.reset_hidden_states()
+        self.reset_recurrent_blocks_hidden_states()
 
         for t in range(T):
             timestep = x[:, t, :] # B, C
-            x_timestep = self.recurrent(timestep) # B, C
+            
+            for rb in self.recurrent_blocks:
+                x_timestep = rb(timestep) # B C everytime
+            
             timestep_logits = self.lm_head(x_timestep)
-
             logits.append(timestep_logits)
         
         logits = torch.stack(logits, dim=1) # B, T, C
@@ -46,7 +48,7 @@ class RNN(nn.Module):
 
     def generate(self, idx, max_new_tokens):
         # resetting them hidden states
-        self.recurrent.reset_hidden_states()
+        self.reset_recurrent_blocks_hidden_states()
 
         # setting up the hidden states
         # initializa only up until the last_token - 1
@@ -66,3 +68,7 @@ class RNN(nn.Module):
             idx = torch.cat((idx, idx_next), dim=1)
         
         return idx
+    
+    def reset_recurrent_blocks_hidden_states(self):
+        for rb in self.recurrent_blocks:
+            rb.recurrent.reset_hidden_states()
