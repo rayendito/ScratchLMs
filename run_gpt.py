@@ -27,18 +27,18 @@ val_data = data[n:]
 
 # hyperparameters ====================================================
 batch_size = 4
-max_iters = 1500
+max_iters = 1000
 eval_interval = 100
 eval_iters = 200
-lr = 1e-4
+lr = 3e-5
 
 # model config =======================================================
 config = Config(
     vocab_size=vocab_size,
-    context_length=8, # ex block_size
+    context_length=8,
     embedding_size=32,
     n_attn_heads=4,
-    n_blocks=6,
+    n_blocks=4,
     layer_norm_bias=False,
     dropout=0
 )
@@ -80,7 +80,7 @@ for it in range(max_iters):
 
 # inference ==========================================================
 # todo: padding to context length function
-seed = 'Becometh'
+seed = 'First, you know Caius Marcius is chief enemy to '
 seed_encoded = torch.tensor([encode(seed)]).to(device)
 result = model.generate(seed_encoded, 100)
 print(decode(result[0].tolist()))

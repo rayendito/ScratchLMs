@@ -18,10 +18,10 @@ else:
 
 # hyperparams ==========================================================
 batch_size = 4
-max_iters = 1500
+max_iters = 1000
 eval_interval = 100
 eval_iters = 200
-lr = 3e-4
+lr = 4e-5
 
 # setting up data ====================================================
 text, chars, vocab_size, encode, decode = text_chars_vocabsz_enc_dec(data_path)
@@ -36,9 +36,9 @@ config = Config(
     vocab_size=vocab_size,
     context_length=8,
     embedding_size=32,
-    n_blocks=6,
+    n_blocks=4,
     layer_norm_bias=False,
-    dropout=0.0,
+    dropout=0,
 
     # unused, for RNN
     n_attn_heads=None,
@@ -81,7 +81,7 @@ for i in range(max_iters):
 
 
 # generation =========================================================
-seed1 = 'Becometh'
-seed_encoded = torch.tensor([encode(seed1)])
+seed = 'First, you know Caius Marcius is chief enemy to '
+seed_encoded = torch.tensor([encode(seed)])
 result = model.generate(seed_encoded, 100)
 print(decode(result[0].tolist()))
