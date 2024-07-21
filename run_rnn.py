@@ -2,6 +2,8 @@ from models.RNN.RNN import RNN
 
 from utils.data_utils import *
 from utils.config import Config
+from utils.model_utils import show_parameter_counts
+
 
 # variables ==========================================================
 data_path = 'input.txt'
@@ -34,7 +36,7 @@ config = Config(
     vocab_size=vocab_size,
     context_length=8,
     embedding_size=32,
-    n_blocks=5,
+    n_blocks=6,
     layer_norm_bias=False,
     dropout=0.0,
 
@@ -45,6 +47,7 @@ config = Config(
 # MODEL ==============================================================
 model = RNN(config)
 optimizer = torch.optim.AdamW(model.parameters(), lr)
+show_parameter_counts(model)
 
 # training loop ======================================================
 def estimate_loss(model, data_train, data_val):

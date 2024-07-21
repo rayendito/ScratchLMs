@@ -2,6 +2,7 @@
 from models.GPT.GPT import GPT
 from utils.data_utils import *
 from utils.config import Config
+from utils.model_utils import show_parameter_counts
 
 torch.manual_seed(1337)
 
@@ -29,7 +30,7 @@ batch_size = 4
 max_iters = 1500
 eval_interval = 100
 eval_iters = 200
-lr = 3e-4
+lr = 1e-4
 
 # model config =======================================================
 config = Config(
@@ -37,7 +38,7 @@ config = Config(
     context_length=8, # ex block_size
     embedding_size=32,
     n_attn_heads=4,
-    n_blocks=5,
+    n_blocks=6,
     layer_norm_bias=False,
     dropout=0
 )
@@ -45,6 +46,7 @@ config = Config(
 # model and optimizers ===============================================
 model = GPT(config).to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr)
+show_parameter_counts(model)
 
 # training loop ======================================================
 def estimate_loss(model, data_train, data_val):

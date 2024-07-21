@@ -10,7 +10,7 @@ class RNN(nn.Module):
         super().__init__()
         self.config = config
         self.token_embedding = nn.Embedding(config.vocab_size, config.embedding_size)
-        self.recurrent_blocks = [RecurrentBlock(config) for _ in range(config.n_blocks)]
+        self.recurrent_blocks = nn.ModuleList([RecurrentBlock(config) for _ in range(config.n_blocks)])
         self.lm_head = nn.Linear(config.embedding_size, config.vocab_size)
 
     def forward(self, idx, targets=None):
