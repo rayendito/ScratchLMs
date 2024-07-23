@@ -47,16 +47,21 @@ class RNN(nn.Module):
         return logits, loss
 
     def generate(self, idx, max_new_tokens):
+        assert max_new_tokens >= 1
+        
         # resetting them hidden states
         self.reset_recurrent_blocks_hidden_states()
 
         # setting up the hidden states
-        # initializa only up until the last_token - 1
-        logits, loss = self(idx[:, :-1])
-
-        # generating the words one by one
-        for _ in range(max_new_tokens):
-            
+        # intializing using the input string, append the new token (only one)
+        logits, loss = self(idx)
+        logits = logits[:, -1, :]
+        probs = F.softmax(logits, dim=-1)
+        idx_next = torch.multinomial(probs, num_samples=1)
+        idx = torch.cat((idx, idx_next), dim=1)
+        
+        # now do the thing over and over again
+        for _ in range(max_new_tokens-1):
             # feeding only the last token to generate the next one
             # unlike attention which has to look at the preceeding tokens of context length again
             # representation is already in the hidden states

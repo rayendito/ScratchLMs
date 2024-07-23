@@ -81,7 +81,7 @@ for i in range(max_iters):
 
 
 # generation =========================================================
-seed = 'First, you know Caius Marcius is chief enemy to '
-seed_encoded = torch.tensor([encode(seed)])
+seed = 'F'
+seed_encoded = torch.tensor([encode(seed, pad=False)])
 result = model.generate(seed_encoded, 100)
 print(decode(result[0].tolist()))
