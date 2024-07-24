@@ -21,10 +21,10 @@ batch_size = 4
 max_iters = 1000
 eval_interval = 100
 eval_iters = 200
-lr = 4e-5
+lr = 1e-5
 
 # setting up data ====================================================
-tokenizer = Tokenizer(data_path)
+tokenizer = Tokenizer(data_path, padding=False)
 train_size = int(0.9*len(tokenizer.chars))
 
 train_data = tokenizer.data[:train_size]
@@ -33,9 +33,9 @@ val_data = tokenizer.data[train_size:]
 # model config =======================================================
 config = Config(
     vocab_size=tokenizer.vocab_size,
-    context_length=8,
-    embedding_size=32,
-    n_attn_heads=4,
+    context_length=16,
+    embedding_size=128,
+    n_attn_heads=8,
     n_blocks=6,
     layer_norm_bias=False,
     dropout=0
@@ -77,7 +77,7 @@ for it in range(max_iters):
     optimizer.zero_grad(set_to_none = True)
 
 # inference ==========================================================
-seed = 'First'
+seed = 'p'
 seed_encoded = torch.tensor([tokenizer(seed)]).to(device)
 result = model.generate(seed_encoded, 10)
 print(tokenizer.decode(result[0].tolist()))

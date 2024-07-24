@@ -3,7 +3,7 @@ import torch
 PAD_CHAR='@'
 
 class Tokenizer():
-    def __init__(self, input_file, context_length = 8, padding = True):
+    def __init__(self, input_file, context_length = 8, padding = False):
         with open(input_file, 'r', encoding='utf8') as f:
             text = f.read() # i dont think it's wise to save the whole text in the object
             self.chars = [PAD_CHAR] + sorted(list(set(text)))
