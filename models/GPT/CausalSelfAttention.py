@@ -26,7 +26,9 @@ class CausalSelfAttention(nn.Module):
     
     # B, nh, T, head_size @ B, nh, head_size, T = B, nh, T, T
     att_weights = (queries @ keys.transpose(-2,-1)) * (1.0 / math.sqrt(keys.size(-1))) # B, nh, T, T
-    att_weights = att_weights.masked_fill(self.attention_mask == 0, -float('inf'))
+    att_weights = att_weights.masked_fill(self.attention_mask == 0, -float('inf')) # B, nh, T, T
+    # print(att_weights.shape)
+    # print(att_weights)
     att_weights = F.softmax(att_weights, dim=-1)
     att_weights = self.attn_dropout(att_weights) # dropout in attention
     # wait but doesn't this att layer has a zero upper triangle?
