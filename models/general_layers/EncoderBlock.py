@@ -1,13 +1,15 @@
 import torch.nn as nn
-from .CausalSelfAttention import CausalSelfAttention
-from models.general_layers.MLP import MLP
-from models.general_layers.LayerNorm import LayerNorm
+from .AttentionLayer import AttentionLayer
+from .MLP import MLP
+from .LayerNorm import LayerNorm
 
-class Block(nn.Module):
+class EncoderBlock(nn.Module):
   def __init__(self, config):
     super().__init__()
+    
     self.norm1 = LayerNorm(config.embedding_size, config.layer_norm_bias)
-    self.attention = CausalSelfAttention(config)
+    self.attention = AttentionLayer(config) # can look at itself as it likes
+
     self.norm2 = LayerNorm(config.embedding_size, config.layer_norm_bias)
     self.mlp = MLP(config)
 

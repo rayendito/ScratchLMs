@@ -1,5 +1,5 @@
 import torch
-from models.GPT.GPT import GPT
+from models.Transformers.Transformers import Transformers
 from utils.Tokenizer import Tokenizer
 from utils.config import Config
 from utils.model_utils import show_parameter_counts
@@ -17,8 +17,8 @@ else:
     device = 'cpu'
 
 # hyperparameters ====================================================
-batch_size = 4
-max_iters = 1000
+batch_size = 2
+max_iters = 1
 eval_interval = 100
 eval_iters = 200
 lr = 1e-5
@@ -33,16 +33,16 @@ val_data = tokenizer.data[train_size:]
 # model config =======================================================
 config = Config(
     vocab_size=tokenizer.vocab_size,
-    context_length=16,
-    embedding_size=128,
-    n_attn_heads=8,
-    n_blocks=6,
+    context_length=8,
+    embedding_size=16,
+    n_attn_heads=4,
+    n_blocks=3,
     layer_norm_bias=False,
     dropout=0
 )
 
 # model and optimizers ===============================================
-model = GPT(config).to(device)
+model = Transformers(config).to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr)
 show_parameter_counts(model)
 
@@ -77,7 +77,7 @@ for it in range(max_iters):
     optimizer.zero_grad(set_to_none = True)
 
 # inference ==========================================================
-seed = 'p'
+seed = 'P'
 seed_encoded = torch.tensor([tokenizer(seed)]).to(device)
 result = model.generate(seed_encoded, 100)
 print(tokenizer.decode(result[0].tolist()))
