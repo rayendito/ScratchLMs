@@ -23,7 +23,7 @@ eval_iters = 200
 lr = 4e-5
 
 # setting up data ====================================================
-tokenizer = Tokenizer(data_path, padding=False)
+tokenizer = Tokenizer(data_path)
 train_size = int(0.9*len(tokenizer.chars))
 
 train_data = tokenizer.data[:train_size]
