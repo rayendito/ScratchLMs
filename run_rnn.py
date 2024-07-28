@@ -6,7 +6,7 @@ from utils.model_utils import show_parameter_counts
 
 
 # variables ==========================================================
-data_path = 'input.txt'
+data_path = 'input_smaller.txt'
 
 if(torch.cuda.is_available()):
     device = 'cuda'
@@ -23,11 +23,12 @@ eval_iters = 200
 lr = 4e-5
 
 # setting up data ====================================================
-tokenizer = Tokenizer(data_path)
-train_size = int(0.9*len(tokenizer.chars))
+tokenizer = Tokenizer(data_path, target_vocab_size=356)
+all_data_tokenized = tokenizer.encode_from_file(data_path)[0]
+train_size = int(0.9*len(all_data_tokenized))
 
-train_data = tokenizer.data[:train_size]
-val_data = tokenizer.data[train_size:]
+train_data = all_data_tokenized[:train_size]
+val_data = all_data_tokenized[train_size:]
 
 # model config =======================================================
 config = Config(
@@ -79,7 +80,7 @@ for i in range(max_iters):
 
 
 # generation =========================================================
-seed = 'F'
-seed_encoded = torch.tensor([tokenizer(seed)])
-result = model.generate(seed_encoded, 100)
-print(tokenizer.decode(result[0].tolist()))
+seed = 'We are accounted poor citizens'
+seed_encoded = tokenizer(seed).to(device)
+result = model.generate(seed_encoded, 10)
+print(tokenizer.decode(result[0]))
