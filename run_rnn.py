@@ -33,9 +33,9 @@ val_data = all_data_tokenized[train_size:]
 # model config =======================================================
 config = Config(
     vocab_size=tokenizer.vocab_size,
-    context_length=8,
-    embedding_size=32,
-    n_blocks=4,
+    context_length=16,
+    embedding_size=128,
+    n_blocks=6,
     layer_norm_bias=False,
     dropout=0,
 
