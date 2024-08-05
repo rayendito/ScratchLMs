@@ -3,24 +3,31 @@ import torch
 PAD_CHAR='@'
 
 class Tokenizer():
-    def __init__(self, input_file, target_vocab_size):
+    def __init__(self, input_file, target_vocab_size, encoding_level='byte'):
         with open(input_file, 'r', encoding='utf8') as f:
             text = f.read() # i dont think it's wise to save the whole text in the object
             text_utf8 = text.encode('utf8')
             self.text_utf8 = list(text_utf8)
-
             self.vocab_size = target_vocab_size
-            self.train_bpe(target_vocab_size) # vocab is initialized through calling this function
+
+            self.encoding_level = encoding_level
+            if(self.encoding_level == 'byte'):
+                self.train_bpe_byte(target_vocab_size) # vocab is initialized through calling this function
+            else:
+                print('UNIMPLEMENTED')
 
     # encode a string
     def __call__(self, input_string):
-        input_encoded = input_string.encode('utf-8')
-        input_tokenized = list(input_encoded)
-        for idx, pair in self.vocab.items():
-            pair = tuple(pair)
-            if(len(pair) >= 2):
-                input_tokenized = self.merge(input_tokenized, pair, idx) 
-        return torch.tensor([input_tokenized])
+        if(self.encoding_level == 'byte'):
+            input_encoded = input_string.encode('utf-8')
+            input_tokenized = list(input_encoded)
+            for idx, pair in self.vocab.items():
+                pair = tuple(pair)
+                if(len(pair) >= 2):
+                    input_tokenized = self.merge(input_tokenized, pair, idx) 
+            return torch.tensor([input_tokenized])
+        else:
+            return "UNIMPLEMENTED"
     
     # encode but from a file name
     def encode_from_file(self, input_file):
@@ -28,7 +35,7 @@ class Tokenizer():
             text = f.read()
             return self(text)
 
-    def train_bpe(self, target_vocab_size):
+    def train_bpe_byte(self, target_vocab_size):
         # hardcoded 256?
         # it's because one byte is maximum 255 (0-255 is 256 things)
         self.vocab = {i : bytes([i]) for i in range(256)}
@@ -38,13 +45,17 @@ class Tokenizer():
             most_freq = max(stats, key=stats.get)
             self.text_utf8 = self.merge(self.text_utf8, most_freq, 256+i)
             self.vocab[256+i] = self.vocab[most_freq[0]] + self.vocab[most_freq[1]]
+        self.reverse_vocab = {v:k for k,v in self.vocab.items()}
 
     def decode(self, ids):
-        bytestream = b"".join([self.vocab[i] for i in ids.tolist()]) # ids are indices
-        # 128 to 255 would return an error. not a valid utf hex
-        # but 256 and beyond would always be a combination of 0-127 or >255 no?
-        # so 128-255 should never be accessed?
-        return bytestream.decode('utf-8', errors='replace')
+        if(self.encoding_level == 'byte'):
+            bytestream = b"".join([self.vocab[i] for i in ids.tolist()]) # ids are indices
+            # 128 to 255 would return an error. not a valid utf hex
+            # but 256 and beyond would always be a combination of 0-127 or >255 no?
+            # so 128-255 should never be accessed?
+            return bytestream.decode('utf-8', errors='replace')
+        else:
+            return "UNIMPLEMENTED"
     
     def get_pair_stats(self, ids):
         counts = {}
