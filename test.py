@@ -1,7 +1,7 @@
 from utils.Tokenizer import Tokenizer
 
 input_file = 'input_smaller.txt'
-tokenizer = Tokenizer(input_file, 60, encoding_level='code_point', byte_fallback=True)
+tokenizer = Tokenizer(input_file, 60)
 
 
 # inputstr = "After BIOS completes some low-level tests of the hardware, particularly whether ornot the installed memory is working correctly, it must boot the operating system storedon one of your devices."

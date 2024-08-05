@@ -5,26 +5,31 @@ PAD_CHAR='@'
 class Tokenizer():
     def __init__(self, input_file,
                   target_vocab_size,
-                  encoding_level='byte',
+                  encoding_level='char',
                   train_char_coverage=0.8, # char level encoding arg. more info https://github.com/google/sentencepiece/issues/412
                   byte_fallback=False): # char level encoding arg.
         with open(input_file, 'r', encoding='utf8') as f:
             self.text = f.read() # i dont think it's wise to save the whole text in the object
             self.text_utf8 = list(self.text.encode('utf8'))
-            self.vocab_size = target_vocab_size
 
             self.encoding_level = encoding_level
             self.byte_fallback = byte_fallback
-            if(self.encoding_level == 'byte'):
+            if(self.encoding_level == 'char'):
+                self.train_bpe_char()
+            elif(self.encoding_level == 'byte'):
                 self.train_bpe_byte(target_vocab_size) # vocab is initialized through calling this function
             elif(self.encoding_level == 'code_point'):
                 self.train_bpe_code_point(target_vocab_size, train_char_coverage, byte_fallback)
             else:
                 print('INVALID ENCODING LEVEL ARG')
+            
+            self.vocab_size = len(self.vocab)
 
     # encode a string
     def __call__(self, input_string):
-        if(self.encoding_level == 'byte'):
+        if(self.encoding_level == 'char'):
+            return torch.tensor([[self.reversed_vocab[c] if c in self.reversed_vocab else 0 for c in input_string]])
+        elif(self.encoding_level == 'byte'):
             input_encoded = input_string.encode('utf-8')
             input_tokenized = list(input_encoded)
             for idx, pair in self.vocab.items():
@@ -58,6 +63,16 @@ class Tokenizer():
         with open(input_file, 'r', encoding='utf8') as f:
             text = f.read()
             return self(text)
+
+    # daydreaming lol
+    def train_bpe_char(self):
+        chars = sorted(list(set(self.text)))
+        self.vocab = {
+            0 : '⌬' # unknown character fallback
+        }
+        for i,ch in enumerate(chars):
+            self.vocab[i+1] = ch
+        self.reversed_vocab = { v : k for k, v in self.vocab.items() }
 
     def train_bpe_byte(self, target_vocab_size):
         # hardcoded 256?
@@ -122,7 +137,9 @@ class Tokenizer():
 
     def decode(self, ids):
         ids = ids.tolist()
-        if(self.encoding_level == 'byte'):
+        if(self.encoding_level == 'char'):
+            return ''.join([self.vocab[i] for i in ids])
+        elif(self.encoding_level == 'byte'):
             bytestream = b"".join([self.vocab[i] for i in ids]) # ids are indices
             # 128 to 255 would return an error. not a valid utf hex
             # but 256 and beyond would always be a combination of 0-127 or >255 no?
