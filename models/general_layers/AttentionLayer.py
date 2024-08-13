@@ -17,6 +17,8 @@ class AttentionLayer(nn.Module):
     self.causal = causal
     self.cross = cross
 
+    self.device = config.device
+
   def forward(self, x, cross_attn_key = None, cross_attn_value = None):
     B, T, C = x.shape # B T C
     queries, keys, values = self.c_attn(x).split(self.config.embedding_size, dim=-1)
@@ -35,7 +37,7 @@ class AttentionLayer(nn.Module):
     att_weights = (queries @ keys.transpose(-2,-1)) * (1.0 / math.sqrt(keys.size(-1))) # B, nh, T, T
     
     if self.causal: # on decoders, mask to prevent attending to future tokens
-      attention_mask = torch.tril(torch.ones(T, T, requires_grad=False))
+      attention_mask = torch.tril(torch.ones(T, T, requires_grad=False)).to(self.device)
       att_weights = att_weights.masked_fill(attention_mask == 0, -float('inf')) # B, nh, T, T
     
     att_weights = F.softmax(att_weights, dim=-1)

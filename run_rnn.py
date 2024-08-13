@@ -38,7 +38,8 @@ config = Config(
     n_blocks=6,
     layer_norm_bias=False,
     dropout=0,
-
+    device=device,
+    
     # unused, for RNN
     n_attn_heads=None,
 )
@@ -57,6 +58,7 @@ def estimate_loss(model, data_train, data_val):
         losses = torch.zeros(eval_iters)
         for k in range(eval_iters):
             X, Y = tokenizer.get_batch(splits[split], config.context_length, batch_size)
+            X, Y = X.to(device), Y.to(device)
             logits, loss = model(X, Y)
             losses[k] = loss.item()
         out[split] = losses.mean()

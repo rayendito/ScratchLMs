@@ -12,6 +12,7 @@ class RNN(nn.Module):
         self.token_embedding = nn.Embedding(config.vocab_size, config.embedding_size)
         self.recurrent_blocks = nn.ModuleList([RecurrentBlock(config) for _ in range(config.n_blocks)])
         self.lm_head = nn.Linear(config.embedding_size, config.vocab_size)
+        self.device = config.device
 
     def forward(self, idx, targets=None):
         x = self.token_embedding(idx)
@@ -26,11 +27,9 @@ class RNN(nn.Module):
         self.reset_recurrent_blocks_hidden_states()
 
         for t in range(T):
-            timestep = x[:, t, :] # B, C
-            
+            timestep = x[:, t, :].to(self.device) # B, C
             for rb in self.recurrent_blocks:
                 x_timestep = rb(timestep) # B C everytime
-            
             timestep_logits = self.lm_head(x_timestep)
             logits.append(timestep_logits)
         

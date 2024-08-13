@@ -15,10 +15,12 @@ class RecurrentLayer(nn.Module):
 
         self.activation = nn.Tanh()
 
+        self.device = config.device
+
     def forward(self, x):
         B, C = x.shape # C = embedding_size
         if self.hidden_state is None:
-            self.hidden_state = torch.zeros(B, self.hidden_size, requires_grad=False)
+            self.hidden_state = torch.zeros(B, self.hidden_size, requires_grad=False).to(self.device)
             
         wx = self.input_weights(x) # B, hidden_size
         ch = self.hidden_weights(self.hidden_state) # B, hidden_size

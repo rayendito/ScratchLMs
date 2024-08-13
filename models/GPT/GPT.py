@@ -18,11 +18,13 @@ class GPT(nn.Module):
     self.attn_blocks =  nn.ModuleList([DecoderBlock(config) for _ in range(config.n_blocks)])
     self.lm_head = nn.Linear(config.embedding_size, config.vocab_size)
 
+    self.device = config.device
+    
   def forward(self, idx, targets=None):
     B, T = idx.shape
 
     vocab_embd_output = self.token_embedding_table(idx) # B T C
-    positional_embd = self.position_embedding_table(torch.arange(T)) # T C
+    positional_embd = self.position_embedding_table(torch.arange(T, device=self.device)) # T C
     x = vocab_embd_output + positional_embd # B T C
     
     for block in self.attn_blocks:

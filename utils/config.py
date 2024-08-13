@@ -9,3 +9,4 @@ class Config:
     n_blocks : int
     layer_norm_bias : bool
     dropout : float
+    device : str
