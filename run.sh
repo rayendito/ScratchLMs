@@ -1,0 +1,1 @@
+python run_lm.py --architecture rnn --data_path input.txt

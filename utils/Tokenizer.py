@@ -4,16 +4,16 @@ PAD_CHAR='@'
 
 class Tokenizer():
     def __init__(self, input_file,
-                  target_vocab_size,
+                  target_vocab_size=None,
                   encoding_level='char',
                   train_char_coverage=0.8, # char level encoding arg. more info https://github.com/google/sentencepiece/issues/412
                   byte_fallback=False): # char level encoding arg.
         with open(input_file, 'r', encoding='utf8') as f:
             self.text = f.read() # i dont think it's wise to save the whole text in the object
             self.text_utf8 = list(self.text.encode('utf8'))
-
             self.encoding_level = encoding_level
             self.byte_fallback = byte_fallback
+
             if(self.encoding_level == 'char'):
                 self.train_bpe_char()
             elif(self.encoding_level == 'byte'):
@@ -77,6 +77,7 @@ class Tokenizer():
     def train_bpe_byte(self, target_vocab_size):
         # hardcoded 256?
         # it's because one byte is maximum 255 (0-255 is 256 things)
+        assert target_vocab_size != None
         self.vocab = {i : bytes([i]) for i in range(256)}
         n_merges = target_vocab_size - 256
         for i in range(n_merges):
@@ -87,6 +88,7 @@ class Tokenizer():
         self.reversed_vocab = {v:k for k,v in self.vocab.items()}
 
     def train_bpe_code_point(self, target_vocab_size, train_char_coverage, byte_fallback):
+        assert target_vocab_size != None
         train_len = round(len(self.text) * train_char_coverage)
         self.reversed_vocab = {
             '<UNK>' : 0,

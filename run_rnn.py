@@ -39,9 +39,6 @@ config = Config(
     layer_norm_bias=False,
     dropout=0,
     device=device,
-    
-    # unused, for RNN
-    n_attn_heads=None,
 )
 
 # MODEL ==============================================================
