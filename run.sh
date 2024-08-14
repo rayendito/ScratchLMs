@@ -1,1 +1,1 @@
-python run_lm.py --architecture rnn --data_path input.txt
+python run_lm.py --architecture gpt --data_path input.txt

@@ -31,13 +31,16 @@ class Tokenizer():
             self.vocab_size = len(self.vocab)
 
     # encode a string
-    def __call__(self, input_string):
+    def __call__(self, inputs):
+        if(isinstance(inputs, str)):
+            inputs = [inputs]
+        
         if(self.encoding_level == 'char'):
-            return self.encode_char(input_string)
+            return torch.tensor([self.encode_char(inp) for inp in inputs])
         elif(self.encoding_level == 'byte'):
-            return self.encode_bpe_byte(input_string)
+            return torch.tensor([self.encode_bpe_byte(inp) for inp in inputs])
         elif(self.encoding_level == 'code_point'):
-            return self.encode_bpe_code_point(input_string)
+            return torch.tensor([self.encode_bpe_code_point(inp) for inp in inputs])
     
     # encode but from a file name
     def encode_from_file(self, input_file):
@@ -134,7 +137,7 @@ class Tokenizer():
     # ENCODING
     # ===============================================================================================
     def encode_char(self, input_string):
-        return torch.tensor([[self.reversed_vocab[c] if c in self.reversed_vocab else 0 for c in input_string]])
+        return [self.reversed_vocab[c] if c in self.reversed_vocab else 0 for c in input_string]
     
     def encode_bpe_byte(self, input_string):
         input_encoded = input_string.encode('utf-8')
@@ -143,7 +146,7 @@ class Tokenizer():
             pair = tuple(pair)
             if(len(pair) >= 2):
                 input_tokenized = self.merge(input_tokenized, pair, idx) 
-        return torch.tensor([input_tokenized])
+        return input_tokenized
     
     #TODO: make better? (complexity is crazy here lol)
     def encode_bpe_code_point(self, input_string):
@@ -164,22 +167,30 @@ class Tokenizer():
                     if(input_tokenized and input_tokenized[-1] != self.reversed_vocab[UNK_TOK]):
                         input_tokenized.append(self.reversed_vocab[UNK_TOK])
                 input_string = input_string[1:]
-        return torch.tensor([input_tokenized])
+        return input_tokenized
     
     # ===============================================================================================
     # DECODING 
     # ===============================================================================================
     def decode(self, ids):
-        ids = ids.tolist()
+        if(ids.ndim == 1):
+            ids = [ids.tolist()]
+        else:
+            ids = ids.tolist()
+        
         if(self.encoding_level == 'char'):
-            return self.decode_char(ids)
+            return [self.decode_char(i) for i in ids]
+            # return self.decode_char(ids)
         elif(self.encoding_level == 'byte'):
-            return self.decode_bpe_byte(ids)
+            return [self.decode_bpe_byte(i) for i in ids]
+            # return self.decode_bpe_byte(ids)
         elif(self.encoding_level == 'code_point'):
-            return self.decode_bpe_code_point(ids)
+            return [self.decode_bpe_code_point(i) for i in ids]
+            # return self.decode_bpe_code_point(ids)
     
     def decode_char(self, ids):
         return ''.join([self.vocab[i] for i in ids])
+    
     def decode_bpe_byte(self, ids):
         # 128 to 255 would return an error. not a valid utf hex
         # but 256 and beyond would always be a combination of 0-127 or >255 no?

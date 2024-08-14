@@ -104,7 +104,14 @@ if __name__ == "__main__":
         optimizer.zero_grad(set_to_none = True)
 
     # generation =========================================================
-    seed = 'We are accounted poor cit'
+    # seed = 'We are accounted poor cit'
+    seed = [
+        'We are accounted poor cit',
+        'You are all resolved rath',
+    ]
+
     seed_encoded = tokenizer(seed).to(device)
     result = model.generate(seed_encoded, 25)
-    print(tokenizer.decode(result[0]))
+    result = tokenizer.decode(result)
+    print(result[0])
+    print(result[1])
