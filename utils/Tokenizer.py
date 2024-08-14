@@ -36,11 +36,17 @@ class Tokenizer():
             inputs = [inputs]
         
         if(self.encoding_level == 'char'):
-            return torch.tensor([self.encode_char(inp) for inp in inputs])
+            ids = [self.encode_char(inp) for inp in inputs]
         elif(self.encoding_level == 'byte'):
-            return torch.tensor([self.encode_bpe_byte(inp) for inp in inputs])
+            ids = [self.encode_bpe_byte(inp) for inp in inputs]
         elif(self.encoding_level == 'code_point'):
-            return torch.tensor([self.encode_bpe_code_point(inp) for inp in inputs])
+            ids = [self.encode_bpe_code_point(inp) for inp in inputs]
+        
+        longest = self.__get_longest_strlen_in_batch(ids)
+        ids = [
+            [self.reversed_vocab[PAD_TOK]] * (longest - len(i)) + i for i in ids
+        ]
+        return torch.tensor(ids)
     
     # encode but from a file name
     def encode_from_file(self, input_file):
@@ -172,21 +178,24 @@ class Tokenizer():
     # ===============================================================================================
     # DECODING 
     # ===============================================================================================
-    def decode(self, ids):
+    # support delete_special currently only for char encoding level
+    def decode(self, ids, delete_special = True):
         if(ids.ndim == 1):
             ids = [ids.tolist()]
         else:
             ids = ids.tolist()
         
+        if(self.encoding_level == 'char' and delete_special):
+            ids = [
+                [x for x in i if 4 < x] for i in ids
+            ]
+
         if(self.encoding_level == 'char'):
             return [self.decode_char(i) for i in ids]
-            # return self.decode_char(ids)
         elif(self.encoding_level == 'byte'):
             return [self.decode_bpe_byte(i) for i in ids]
-            # return self.decode_bpe_byte(ids)
         elif(self.encoding_level == 'code_point'):
             return [self.decode_bpe_code_point(i) for i in ids]
-            # return self.decode_bpe_code_point(ids)
     
     def decode_char(self, ids):
         return ''.join([self.vocab[i] for i in ids])
@@ -244,6 +253,13 @@ class Tokenizer():
         hex_string = hex_string.strip('<>').lstrip('0x')
         # Convert hex string to a single byte
         return bytes([int(hex_string, 16)])
+
+    def __get_longest_strlen_in_batch(self, batch):
+        longest = -99
+        for st in batch:
+            if len(st) > longest:
+                longest = len(st)
+        return longest
 
     # ===============================================================================================
     # STATICS

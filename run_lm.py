@@ -106,7 +106,7 @@ if __name__ == "__main__":
     # generation =========================================================
     # seed = 'We are accounted poor cit'
     seed = [
-        'We are accounted poor cit',
+        'We are accounted poor citizens',
         'You are all resolved rath',
     ]
 
