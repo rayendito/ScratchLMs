@@ -14,12 +14,13 @@ class Tokenizer():
                   byte_fallback=False): # char level encoding arg.
         with open(input_file, 'r', encoding='utf8') as f:
             self.text = f.read() # i dont think it's wise to save the whole text in the object
-            self.text_utf8 = list(self.text.encode('utf8'))
-            self.encoding_level = encoding_level
+            self.text_utf8 = list(self.text.encode('utf8'))            
             self.byte_fallback = byte_fallback
 
+
+            self.encoding_level = encoding_level
             if(self.encoding_level == 'char'):
-                self.train_bpe_char()
+                self.train_char()
             elif(self.encoding_level == 'byte'):
                 self.train_bpe_byte(target_vocab_size) # vocab is initialized through calling this function
             elif(self.encoding_level == 'code_point'):
@@ -32,35 +33,11 @@ class Tokenizer():
     # encode a string
     def __call__(self, input_string):
         if(self.encoding_level == 'char'):
-            return torch.tensor([[self.reversed_vocab[c] if c in self.reversed_vocab else 0 for c in input_string]])
+            return self.encode_char(input_string)
         elif(self.encoding_level == 'byte'):
-            input_encoded = input_string.encode('utf-8')
-            input_tokenized = list(input_encoded)
-            for idx, pair in self.vocab.items():
-                pair = tuple(pair)
-                if(len(pair) >= 2):
-                    input_tokenized = self.merge(input_tokenized, pair, idx) 
-            return torch.tensor([input_tokenized])
+            return self.encode_bpe_byte(input_string)
         elif(self.encoding_level == 'code_point'):
-            # algorithm complexity is crazy here tho lol
-            input_tokenized = []
-            while(input_string != ''):
-                cut = False
-                for tok, i in self.reversed_vocab.items():
-                    if input_string.startswith(tok):
-                        input_tokenized.append(i)
-                        input_string = input_string[len(tok):]
-                        cut = True
-                if(not(cut)):
-                    if(self.byte_fallback):
-                        bytestream = list(input_string[0].encode('utf-8'))
-                        for b in bytestream:
-                            input_tokenized.append(self.reversed_vocab[f'<{str(hex(b))}>'])
-                    else:
-                        if(input_tokenized and input_tokenized[-1] != self.reversed_vocab[UNK_TOK]):
-                            input_tokenized.append(self.reversed_vocab[UNK_TOK])
-                    input_string = input_string[1:]
-            return torch.tensor([input_tokenized])
+            return self.encode_bpe_code_point(input_string)
     
     # encode but from a file name
     def encode_from_file(self, input_file):
@@ -68,8 +45,10 @@ class Tokenizer():
             text = f.read()
             return self(text)
 
-    # daydreaming lol
-    def train_bpe_char(self):
+    # ===============================================================================================
+    # TRAINING
+    # ===============================================================================================
+    def train_char(self):
         chars = sorted(list(set(self.text)))
         self.vocab = {
             0 : UNK_TOK, # unknown character fallback
@@ -102,8 +81,12 @@ class Tokenizer():
         train_len = round(len(self.text) * train_char_coverage)
         self.reversed_vocab = {
             UNK_TOK : 0,
+            PAD_TOK : 1,
+            SRC_TOK : 2,
+            TGT_TOK : 3,
+            END_TOK : 4,
         }
-        
+
         # add to the vocab first the individual characters that exist?
         if byte_fallback:
             # add the byte fallback tokens to vocab
@@ -146,35 +129,84 @@ class Tokenizer():
         
         #sorting the reversed vocab so that it can be used to decode greedily
         self.reversed_vocab = dict(sorted(self.reversed_vocab.items(), key=lambda item: len(item[0]), reverse=True))
-
+    
+    # ===============================================================================================
+    # ENCODING
+    # ===============================================================================================
+    def encode_char(self, input_string):
+        return torch.tensor([[self.reversed_vocab[c] if c in self.reversed_vocab else 0 for c in input_string]])
+    
+    def encode_bpe_byte(self, input_string):
+        input_encoded = input_string.encode('utf-8')
+        input_tokenized = list(input_encoded)
+        for idx, pair in self.vocab.items():
+            pair = tuple(pair)
+            if(len(pair) >= 2):
+                input_tokenized = self.merge(input_tokenized, pair, idx) 
+        return torch.tensor([input_tokenized])
+    
+    #TODO: make better? (complexity is crazy here lol)
+    def encode_bpe_code_point(self, input_string):
+        input_tokenized = []
+        while(input_string != ''):
+            cut = False
+            for tok, i in self.reversed_vocab.items():
+                if input_string.startswith(tok):
+                    input_tokenized.append(i)
+                    input_string = input_string[len(tok):]
+                    cut = True
+            if(not(cut)):
+                if(self.byte_fallback):
+                    bytestream = list(input_string[0].encode('utf-8'))
+                    for b in bytestream:
+                        input_tokenized.append(self.reversed_vocab[f'<{str(hex(b))}>'])
+                else:
+                    if(input_tokenized and input_tokenized[-1] != self.reversed_vocab[UNK_TOK]):
+                        input_tokenized.append(self.reversed_vocab[UNK_TOK])
+                input_string = input_string[1:]
+        return torch.tensor([input_tokenized])
+    
+    # ===============================================================================================
+    # DECODING 
+    # ===============================================================================================
     def decode(self, ids):
         ids = ids.tolist()
         if(self.encoding_level == 'char'):
-            return ''.join([self.vocab[i] for i in ids])
+            return self.decode_char(ids)
         elif(self.encoding_level == 'byte'):
-            bytestream = b"".join([self.vocab[i] for i in ids]) # ids are indices
-            # 128 to 255 would return an error. not a valid utf hex
-            # but 256 and beyond would always be a combination of 0-127 or >255 no?
-            # so 128-255 should never be accessed?
-            return bytestream.decode('utf-8', errors='replace')
+            return self.decode_bpe_byte(ids)
         elif(self.encoding_level == 'code_point'):
-            res = []
-            i = 0
-            while i < len(ids):
-                if(not(self.vocab[ids[i]].startswith('<0x'))):
-                    res.append(self.vocab[ids[i]])
-                    i += 1
-                else:
-                    stream_len = 1
-                    while(i+stream_len < len(ids) and self.vocab[ids[i+stream_len]].startswith('<0x')):
-                        stream_len += 1
-                    if(self.byte_fallback):
-                        todecode = [self.vocab[d] for d in ids[i:i+stream_len]]
-                        bytestream = self.__get_bytestream(todecode)
-                        res.append(bytestream.decode('utf-8'))
-                    i += stream_len
-            return "".join(res)
+            return self.decode_bpe_code_point(ids)
     
+    def decode_char(self, ids):
+        return ''.join([self.vocab[i] for i in ids])
+    def decode_bpe_byte(self, ids):
+        # 128 to 255 would return an error. not a valid utf hex
+        # but 256 and beyond would always be a combination of 0-127 or >255 no?
+        # so 128-255 should never be accessed?
+        bytestream = b"".join([self.vocab[i] for i in ids]) # ids are indices
+        return bytestream.decode('utf-8', errors='replace')
+    def decode_bpe_code_point(self, ids):
+        res = []
+        i = 0
+        while i < len(ids):
+            if(not(self.vocab[ids[i]].startswith('<0x'))):
+                res.append(self.vocab[ids[i]])
+                i += 1
+            else:
+                stream_len = 1
+                while(i+stream_len < len(ids) and self.vocab[ids[i+stream_len]].startswith('<0x')):
+                    stream_len += 1
+                if(self.byte_fallback):
+                    todecode = [self.vocab[d] for d in ids[i:i+stream_len]]
+                    bytestream = self.__get_bytestream(todecode)
+                    res.append(bytestream.decode('utf-8'))
+                i += stream_len
+        return "".join(res)
+
+    # ===============================================================================================
+    # UTILS
+    # ===============================================================================================
     def get_pair_stats(self, ids):
         counts = {}
         for pair in zip(ids, ids[1:]):
@@ -192,7 +224,6 @@ class Tokenizer():
                 del ids[i+1]
         return ids
 
-
     def __get_bytestream(self, hex_list):
         # Process each string in the list and combine the bytes
         return b''.join(self.__extract_byte(hex_str) for hex_str in hex_list)
@@ -203,6 +234,9 @@ class Tokenizer():
         # Convert hex string to a single byte
         return bytes([int(hex_string, 16)])
 
+    # ===============================================================================================
+    # STATICS
+    # ===============================================================================================
     @staticmethod
     def get_batch_from_mono(data, block_size, batch_size):
         ix = torch.randint(len(data) - block_size, (batch_size,))
