@@ -7,6 +7,8 @@ from utils.Tokenizer import Tokenizer
 from utils.config import GPTConfig, RNNConfig
 from utils.model_utils import show_parameter_counts
 
+torch.manual_seed(1337)
+
 # hyperparameters ====================================================
 batch_size = 4
 max_iters = 1000
@@ -43,7 +45,7 @@ def estimate_loss(model, data_train, data_val):
     for split in splits:
         losses = torch.zeros(eval_iters)
         for k in range(eval_iters):
-            X, Y = tokenizer.get_batch(splits[split], config.context_length, batch_size)
+            X, Y = tokenizer.get_batch_from_mono(splits[split], config.context_length, batch_size)
             X, Y = X.to(device), Y.to(device)
             logits, loss = model(X, Y)
             losses[k] = loss.item()
@@ -93,7 +95,7 @@ if __name__ == "__main__":
             losses = estimate_loss(model, train_data, val_data)
             print(f"step {i}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
 
-        xb, yb = tokenizer.get_batch(train_data, config.context_length, batch_size)
+        xb, yb = tokenizer.get_batch_from_mono(train_data, config.context_length, batch_size)
         xb, yb = xb.to(device), yb.to(device)
         logits, loss = model(xb,yb)
         

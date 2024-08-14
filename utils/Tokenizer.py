@@ -1,6 +1,10 @@
 import torch
 
-PAD_CHAR='@'
+UNK_TOK = '<UNK>'
+PAD_TOK = '<PAD>'
+SRC_TOK = '<SRC>'
+TGT_TOK = '<TGT>'
+END_TOK = '<END>'
 
 class Tokenizer():
     def __init__(self, input_file,
@@ -53,8 +57,8 @@ class Tokenizer():
                         for b in bytestream:
                             input_tokenized.append(self.reversed_vocab[f'<{str(hex(b))}>'])
                     else:
-                        if(input_tokenized and input_tokenized[-1] != self.reversed_vocab['<UNK>']):
-                            input_tokenized.append(self.reversed_vocab['<UNK>'])
+                        if(input_tokenized and input_tokenized[-1] != self.reversed_vocab[UNK_TOK]):
+                            input_tokenized.append(self.reversed_vocab[UNK_TOK])
                     input_string = input_string[1:]
             return torch.tensor([input_tokenized])
     
@@ -68,10 +72,16 @@ class Tokenizer():
     def train_bpe_char(self):
         chars = sorted(list(set(self.text)))
         self.vocab = {
-            0 : '⌬' # unknown character fallback
+            0 : UNK_TOK, # unknown character fallback
+            1 : PAD_TOK,
+            2 : SRC_TOK,
+            3 : TGT_TOK,
+            4 : END_TOK,
         }
+                                                
+        v_len = len(self.vocab)
         for i,ch in enumerate(chars):
-            self.vocab[i+1] = ch
+            self.vocab[i+v_len] = ch
         self.reversed_vocab = { v : k for k, v in self.vocab.items() }
 
     def train_bpe_byte(self, target_vocab_size):
@@ -91,7 +101,7 @@ class Tokenizer():
         assert target_vocab_size != None
         train_len = round(len(self.text) * train_char_coverage)
         self.reversed_vocab = {
-            '<UNK>' : 0,
+            UNK_TOK : 0,
         }
         
         # add to the vocab first the individual characters that exist?
@@ -113,7 +123,7 @@ class Tokenizer():
             for b in uncovered_bytes:
                 c_points.append(self.reversed_vocab[f'<{str(hex(b))}>'])
         else:
-            c_points.append(self.reversed_vocab['<UNK>'])
+            c_points.append(self.reversed_vocab[UNK_TOK])
 
         # training the vocab, adding merged vocab
         self.vocab = {v : k for k, v in self.reversed_vocab.items()}
@@ -194,16 +204,12 @@ class Tokenizer():
         return bytes([int(hex_string, 16)])
 
     @staticmethod
-    def get_batch(data, block_size, batch_size):
+    def get_batch_from_mono(data, block_size, batch_size):
         ix = torch.randint(len(data) - block_size, (batch_size,))
         x = torch.stack([data[i:i+block_size] for i in ix])
         y = torch.stack([data[i+1:i+block_size+1] for i in ix])
         return x, y
 
-    
-
-    # OLD call dunder (char level)
-    # def __call__(self, input_string, context_length = 8, padding = False):
-    #     if padding and len(input_string) < context_length:
-    #         input_string = PAD_CHAR*(context_length - len(input_string)) + input_string
-    #     return [self.stoi[c] for c in input_string]
+    @staticmethod
+    def get_batch_from_para(src, tgt):
+        pass
