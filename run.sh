@@ -1,1 +1,1 @@
-python run_lm.py --architecture gpt --data_path input.txt
+python run_lm.py --architecture gpt --mono_data_path input_smaller.txt

@@ -13,7 +13,7 @@ class GPT(nn.Module):
     assert config.context_length is not None
 
     self.config = config
-    self.token_embedding_table = nn.Embedding(config.vocab_size, config.embedding_size)
+    self.token_embedding_table = nn.Embedding(config.vocab_size, config.embedding_size, padding_idx=1) # padding idx is hardcoded
     self.position_embedding_table = nn.Embedding(config.context_length, config.embedding_size)
     self.attn_blocks =  nn.ModuleList([DecoderBlock(config) for _ in range(config.n_blocks)])
     self.lm_head = nn.Linear(config.embedding_size, config.vocab_size)

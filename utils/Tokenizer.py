@@ -1,3 +1,4 @@
+import os
 import torch
 
 UNK_TOK = '<UNK>'
@@ -31,7 +32,7 @@ class Tokenizer():
             self.vocab_size = len(self.vocab)
 
     # encode a string
-    def __call__(self, inputs):
+    def __call__(self, inputs, pad=True):
         if(isinstance(inputs, str)):
             inputs = [inputs]
         
@@ -41,18 +42,46 @@ class Tokenizer():
             ids = [self.encode_bpe_byte(inp) for inp in inputs]
         elif(self.encoding_level == 'code_point'):
             ids = [self.encode_bpe_code_point(inp) for inp in inputs]
-        
-        longest = self.__get_longest_strlen_in_batch(ids)
-        ids = [
-            [self.reversed_vocab[PAD_TOK]] * (longest - len(i)) + i for i in ids
-        ]
+
+        if(pad):
+            ids = self.pad_batch(ids)
+
         return torch.tensor(ids)
     
-    # encode but from a file name
-    def encode_from_file(self, input_file):
+    # ===============================================================================================
+    # ENCODING TEXTFILES
+    # ===============================================================================================
+    def encode_from_mono_file(self, input_file):
         with open(input_file, 'r', encoding='utf8') as f:
             text = f.read()
             return self(text)
+        
+    def encode_from_para_dir(self, para_dir):
+        src_path = os.path.join(para_dir, 'src.txt')
+        tgt_path = os.path.join(para_dir, 'tgt.txt')
+        assert os.path.isfile(src_path) and os.path.isfile(tgt_path), f"both src.txt and tgt.txt need to exist in {para_dir}"
+
+        with open(src_path, 'r') as src_file:
+            src_lines = src_file.readlines()
+            src_lines = [line.strip() for line in src_lines]
+
+        with open(tgt_path, 'r') as tgt_file:
+            tgt_lines = tgt_file.readlines()
+            tgt_lines = [line.strip() for line in tgt_lines]
+        
+        assert len(src_lines) == len(tgt_lines), f"unequal src and tgt lens: {len(src_lines)} {len(tgt_lines)}"
+
+        # encoding with added tokens
+        ids = []
+        for i in range(len(src_lines)):
+            ids.append([self.reversed_vocab[SRC_TOK]] + 
+                            self(src_lines[i], pad=False)[0].tolist() +
+                            [self.reversed_vocab[TGT_TOK]] +
+                            self(tgt_lines[i], pad=False)[0].tolist() +
+                            [self.reversed_vocab[END_TOK]])
+        ids = self.pad_batch(ids)
+        return torch.tensor(ids)
+
 
     # ===============================================================================================
     # TRAINING
@@ -227,6 +256,13 @@ class Tokenizer():
     # ===============================================================================================
     # UTILS
     # ===============================================================================================
+    def pad_batch(self, ids):
+        longest = self.__get_longest_strlen_in_batch(ids)
+        ids = [
+            [self.reversed_vocab[PAD_TOK]] * (longest - len(i)) + i for i in ids
+        ]
+        return ids
+    
     def get_pair_stats(self, ids):
         counts = {}
         for pair in zip(ids, ids[1:]):
@@ -270,7 +306,10 @@ class Tokenizer():
         x = torch.stack([data[i:i+block_size] for i in ix])
         y = torch.stack([data[i+1:i+block_size+1] for i in ix])
         return x, y
-
+    
     @staticmethod
-    def get_batch_from_para(src, tgt):
-        pass
+    def get_batch_from_para(data, batch_size):
+        ix = torch.randint(len(data), (batch_size,))
+        x = torch.stack([data[i][:-1] for i in ix])
+        y = torch.stack([data[i][1:] for i in ix])
+        return x, y
