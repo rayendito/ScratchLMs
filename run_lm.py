@@ -106,7 +106,7 @@ if __name__ == "__main__":
         para_train_data = para_data_tokenized[:para_train_size]
         para_val_data = para_data_tokenized[para_train_size:]
 
-    # training loop mono =============================================
+    # # training loop mono =============================================
     print("BEGINNING LANGUAGE MODEL TRAINING")
     for i in range(max_iters):
         if(i % eval_interval == 0):
@@ -138,7 +138,6 @@ if __name__ == "__main__":
             optimizer.zero_grad(set_to_none = True)
 
     # generation ======================================================
-    seed = 'We are accounted poor cit'
     seed = [
         'We are accounted poor citizens',
         'You are all resolved rath',

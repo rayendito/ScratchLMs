@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 
 from models.general_layers.DecoderBlock import DecoderBlock
+from models.general_layers.PositionalEncoding import PositionalEncoding
 
 class GPT(nn.Module):
   def __init__(self, config):
@@ -14,7 +15,7 @@ class GPT(nn.Module):
 
     self.config = config
     self.token_embedding_table = nn.Embedding(config.vocab_size, config.embedding_size, padding_idx=1) # padding idx is hardcoded
-    self.position_embedding_table = nn.Embedding(config.context_length, config.embedding_size)
+    self.position_embedding_table = PositionalEncoding(config)
     self.attn_blocks =  nn.ModuleList([DecoderBlock(config) for _ in range(config.n_blocks)])
     self.lm_head = nn.Linear(config.embedding_size, config.vocab_size)
 
@@ -24,7 +25,7 @@ class GPT(nn.Module):
     B, T = idx.shape
 
     vocab_embd_output = self.token_embedding_table(idx) # B T C
-    positional_embd = self.position_embedding_table(torch.arange(T, device=self.device)) # T C
+    positional_embd = self.position_embedding_table(T) # T C
     x = vocab_embd_output + positional_embd # B T C
     
     for block in self.attn_blocks:
