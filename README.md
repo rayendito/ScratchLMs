@@ -1,4 +1,4 @@
-# ScratchLMs (repo soon to be renamed)
+# ScratchLMs
 some NN architectures that are implemented from scratch[^1] in PyTorch
 
 ## Implemented Architectures
@@ -22,7 +22,7 @@ pip install pytorch
 ```
 and simply do
 ```
-python run_<ARCHITECTURE>.py
+./run.sh
 ```
 ## Results
 ### GPT Training Results (Smaller Shakespeare data)
