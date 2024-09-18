@@ -43,20 +43,34 @@ assert TOKEN_STRATEGY in VALID_TOK_STRAT, f"Invalid tokenizer strategy '{TOKEN_S
 def estimate_loss(model, data_train, data_val, source='mono'):
     out = {}
     splits = {'train' : data_train, 'val' : data_val}
+    
+    # a switch, for some parts of the model (dropout, batchnorm, etc) that 
     model.eval()
+
+    # do for both train and test splits
     for split in splits:
+        # how many instances are used to be averaged
         losses = torch.zeros(eval_iters)
         for k in range(eval_iters):
             if(source == 'mono'):
+                # context_length is needed bc mono data is one very long string
+                # X and Y dim = (batch_size, context_length)
                 X, Y = tokenizer.get_batch_from_mono(splits[split], config.context_length, batch_size)
             elif(source == 'para'):
+                # unlike parallel sentences, whose length are chunks already
+                # but what if we have really long parallel sentences? maybe something to play around with in the future
                 X, Y = tokenizer.get_batch_from_para(splits[split], batch_size)
             else:
                 raise ValueError(f"{source} is not a valid source")
-            X, Y = X.to(device), Y.to(device)
-            logits, loss = model(X, Y)
+            
+            X, Y = X.to(device), Y.to(device)   # moving to the correct devices
+            _, loss = model(X, Y)               # forwarding to the model and getting the loss for one instance
             losses[k] = loss.item()
+        
+        # average over eval_iters amount of data (both training and validation sets)
         out[split] = losses.mean()
+    
+    # back to training mode
     model.train()
     return out
 

@@ -302,13 +302,21 @@ class Tokenizer():
     # ===============================================================================================
     @staticmethod
     def get_batch_from_mono(data, block_size, batch_size):
+        # get random positions from the whole training data
         ix = torch.randint(len(data) - block_size, (batch_size,))
+
+        # get random chunks based on those positions
         x = torch.stack([data[i:i+block_size] for i in ix])
+        
+        # get those random chunks targets, which are themselves but +1
         y = torch.stack([data[i+1:i+block_size+1] for i in ix])
+
         return x, y
     
     @staticmethod
     def get_batch_from_para(data, batch_size):
+        # same logic with mono, but data is already in chunks
+        # data is preformatted: src and tgt sentences into one string
         ix = torch.randint(len(data), (batch_size,))
         x = torch.stack([data[i][:-1] for i in ix])
         y = torch.stack([data[i][1:] for i in ix])
