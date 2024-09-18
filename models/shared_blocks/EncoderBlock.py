@@ -21,3 +21,6 @@ class EncoderBlock(nn.Module):
     x = x + self.mlp(x)
 
     return x
+  
+  def get_att_layer_k_v(self, x):
+    return self.attention.forward_for_key_and_value(x)

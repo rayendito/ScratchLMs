@@ -1,7 +1,7 @@
 import torch.nn as nn
 from .RecurrentLayer import RecurrentLayer
-from models.general_layers.LayerNorm import LayerNorm
-from models.general_layers.MLP import MLP
+from models.shared_blocks.LayerNorm import LayerNorm
+from models.shared_blocks.MLP import MLP
 
 # borrowing the idea from transformers
 # after the recurrent layer, normalize, expand it to twice the size, activation function, project it back, norm again

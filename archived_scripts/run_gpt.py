@@ -1,5 +1,5 @@
 import torch
-from models.GPT.GPT import GPT
+from models.GPT import GPT
 from utils.Tokenizer import Tokenizer
 from utils.config import Config
 from utils.model_utils import show_parameter_counts

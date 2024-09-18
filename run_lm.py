@@ -1,8 +1,8 @@
 import torch
 import os
 
-from models.GPT.GPT import GPT
-from models.RNN.RNN import RNN
+from models.GPT import GPT
+from models.RNN import RNN
 
 from utils.Tokenizer import Tokenizer
 from utils.config import GPTConfig, RNNConfig
@@ -12,7 +12,7 @@ torch.manual_seed(1337)
 
 # hyperparameters ====================================================
 batch_size = 4
-max_iters = 1000
+max_iters = 300
 eval_interval = 100
 eval_iters = 200
 lr = 1e-5

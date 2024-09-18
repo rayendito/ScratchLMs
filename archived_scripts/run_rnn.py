@@ -1,5 +1,5 @@
 import torch
-from models.RNN.RNN import RNN
+from models.RNN import RNN
 from utils.Tokenizer import Tokenizer
 from utils.config import Config
 from utils.model_utils import show_parameter_counts

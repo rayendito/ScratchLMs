@@ -53,7 +53,7 @@ class AttentionLayer(nn.Module):
 
     return y
   
-  def get_key_and_value(self, x):
+  def forward_for_key_and_value(self, x):
     B, T, C = x.shape # B T C
     _, keys, values = self.c_attn(x).split(self.config.embedding_size, dim=-1)
     keys = keys.view(B, T, self.config.n_attn_heads, C // self.config.n_attn_heads).transpose(1, 2) # B, nh, T, head_size

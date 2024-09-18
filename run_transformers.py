@@ -1,5 +1,5 @@
 import torch
-from models.Transformers.Transformers import Transformers
+from models.Transformers import Transformers
 from utils.Tokenizer import Tokenizer
 from utils.config import Config
 from utils.model_utils import show_parameter_counts
