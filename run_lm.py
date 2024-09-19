@@ -70,7 +70,7 @@ def estimate_loss(model, data_train, data_val, source='mono'):
         # average over eval_iters amount of data (both training and validation sets)
         out[split] = losses.mean()
     
-    # back to training mode
+    # back to training mode because loss is calculated already
     model.train()
     return out
 
@@ -131,10 +131,21 @@ if __name__ == "__main__":
         xb, yb = xb.to(device), yb.to(device)
         logits, loss = model(xb,yb)
         
+        # to fully get the grasp of how this can work, look into how autograd is implemented
+        # in short: loss is the result of all of the calculation in the neural net (weights and all)
+        # so there's like a computation graph that includes every used operand, so there's still a connection
         loss.backward()
+        
+        # see how when we initialize the optimizer it takes in model.parameters()
+        # (i think) this is how it knows how to update them parameters i.e. by reference
         optimizer.step()
+
+        # ensures gradients are 'freshly' calculated from previous batches
+        # set_to_none = True set the grads to None instead of zero. docs says:
+        # This will in general have lower memory footprint, and can modestly improve performance.
         optimizer.zero_grad(set_to_none = True)
 
+    # same thing happens essentially, just with parallel sentences
     # # training loop parallel ===========================================
     if(os.path.isdir(PARA_DATA_DIR)):
         print("BEGINNING PARALLEL DATA FINETUNING")
@@ -157,10 +168,11 @@ if __name__ == "__main__":
         'You are all resolved rath',
     ]
 
+    # turning seed into a sequence of tokens (and padding)
     seed_encoded = tokenizer(seed).to(device)
+    
+    # generating (25 new tokens) and printing
     result = model.generate(seed_encoded, 25)
     result = tokenizer.decode(result)
     print(result[0])
     print(result[1])
-
-
