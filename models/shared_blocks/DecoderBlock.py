@@ -24,7 +24,7 @@ class DecoderBlock(nn.Module):
         self.norm3 = LayerNorm(config.embedding_size, config.layer_norm_bias)
         self.mlp = MLP(config)
 
-    def forward(self, x, cross_attn_key=None, cross_attn_value=None):        
+    def forward(self, x, cross_attn_key=None, cross_attn_value=None, kv_cache=None):        
         """
         why do we add and normalize?
         - add: so that gradients flow fast
@@ -37,7 +37,11 @@ class DecoderBlock(nn.Module):
         so i kept it
         """
         x = self.norm1(x)
-        x = x + self.self_attention(x)
+        if(kv_cache is None):
+            x  = x + self.self_attention(x)
+        else:
+            x_attn, new_kv = self.self_attention(x, kv_cache=kv_cache)
+            x = x + x_attn
         
         if(self.cross):
             assert cross_attn_key and cross_attn_value
@@ -47,4 +51,8 @@ class DecoderBlock(nn.Module):
         x = self.norm3(x)
         x = x + self.mlp(x)
 
-        return x
+        # print("returned x type", type(x))
+        if(kv_cache is None):
+            return x
+        else:
+            return x, new_kv

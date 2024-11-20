@@ -1,1 +1,1 @@
-python run_lm.py --architecture rnn --mono_data_path input_smaller.txt --para_data_dir spa_mt
+python run_lm.py --architecture gpt --mono_data_path input.txt --token_strategy 'char' # --para_data_dir spa_mt

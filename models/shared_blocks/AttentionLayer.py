@@ -19,7 +19,7 @@ class AttentionLayer(nn.Module):
 
     self.device = config.device
 
-  def forward(self, x, cross_attn_key = None, cross_attn_value = None):
+  def forward(self, x, cross_attn_key = None, cross_attn_value = None, kv_cache=None):
     B, T, C = x.shape # B T C
     queries, keys, values = self.c_attn(x).split(self.config.embedding_size, dim=-1)
     queries = queries.view(B, T, self.config.n_attn_heads, C // self.config.n_attn_heads).transpose(1, 2) # B, nh, T, head_size
@@ -32,7 +32,18 @@ class AttentionLayer(nn.Module):
       # if self.cross_attn_key and self.cross_attn_value are None, assume self-attention
       keys = keys.view(B, T, self.config.n_attn_heads, C // self.config.n_attn_heads).transpose(1, 2) # B, nh, T, head_size
       values = values.view(B, T, self.config.n_attn_heads, C // self.config.n_attn_heads).transpose(1, 2) # B, nh, T, head_size
-    
+
+    updated_kv = None
+    if(kv_cache is not None):
+      if not(torch.all(torch.isnan(kv_cache))):
+        cached_k, cached_v = torch.unbind(kv_cache, dim=0)
+        keys = torch.cat([cached_k, keys], dim=2)
+        values = torch.cat([cached_v, values], dim=2)
+        # print("splitted kv shapes", cached_k.shape, cached_v.shape, end="")
+        # print("original kv", keys.shape, values.shape)
+      updated_kv = torch.stack([keys[:, :, 1:, :], values[:, :, 1:, :]], dim=0)
+
+
     # B, nh, T, head_size @ B, nh, head_size, T = B, nh, T, T
     att_weights = (queries @ keys.transpose(-2,-1)) * (1.0 / math.sqrt(keys.size(-1))) # B, nh, T, T
     
@@ -51,7 +62,10 @@ class AttentionLayer(nn.Module):
     y = self.proj_layer(y)
     y = self.resid_dropout(y) # projection layer (basically 'aggregating' the attention heads) and dropout regularization
 
-    return y
+    if(kv_cache is None):
+      return y
+    else:
+      return y, updated_kv
   
   def forward_for_key_and_value(self, x):
     B, T, C = x.shape # B T C

@@ -12,7 +12,7 @@ torch.manual_seed(1337)
 
 # hyperparameters ====================================================
 batch_size = 4
-max_iters = 300
+max_iters = 0
 eval_interval = 100
 eval_iters = 200
 lr = 1e-5
@@ -64,7 +64,7 @@ def estimate_loss(model, data_train, data_val, source='mono'):
                 raise ValueError(f"{source} is not a valid source")
             
             X, Y = X.to(device), Y.to(device)   # moving to the correct devices
-            _, loss = model(X, Y)               # forwarding to the model and getting the loss for one instance
+            _, loss  = model(X, Y)           # forwarding to the model and getting the loss for one instance
             losses[k] = loss.item()
         
         # average over eval_iters amount of data (both training and validation sets)
@@ -129,7 +129,7 @@ if __name__ == "__main__":
 
         xb, yb = tokenizer.get_batch_from_mono(train_data, config.context_length, batch_size)
         xb, yb = xb.to(device), yb.to(device)
-        logits, loss = model(xb,yb)
+        logits, loss = model(xb,yb) # kv_cache is not used during training
         
         # to fully get the grasp of how this can work, look into how autograd is implemented
         # in short: loss is the result of all of the calculation in the neural net (weights and all)
@@ -156,7 +156,7 @@ if __name__ == "__main__":
 
             xb, yb = tokenizer.get_batch_from_para(para_train_data, batch_size)
             xb, yb = xb.to(device), yb.to(device)
-            logits, loss = model(xb,yb)
+            logits, loss = model(xb,yb) # kv cache is not used during training
 
             loss.backward()
             optimizer.step()
@@ -164,15 +164,16 @@ if __name__ == "__main__":
 
     # generation ======================================================
     seed = [
-        'We are accounted poor citizens',
-        'You are all resolved rath',
+        'We are poor citizens',
+        'You are all rath',
+        'This is the',
     ]
 
     # turning seed into a sequence of tokens (and padding)
     seed_encoded = tokenizer(seed).to(device)
     
     # generating (25 new tokens) and printing
-    result = model.generate(seed_encoded, 25)
+    result = model.generate(seed_encoded, max_new_tokens=3, use_kv_cache=True)
     result = tokenizer.decode(result)
     print(result[0])
-    print(result[1])
+    # print(result[1])
