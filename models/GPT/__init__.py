@@ -12,7 +12,7 @@ class GPT(nn.Module):
     def __init__(self, config):
         super().__init__()
 
-        # why check specifically these two?
+        # why check specifically these two? @ mas karpathy
         assert config.vocab_size is not None
         assert config.context_length is not None
 
@@ -62,7 +62,7 @@ class GPT(nn.Module):
         for block, block_kv in zip(self.attn_blocks, kv_cache):
             # if block_kv is not None:
             #     print("hmmmm", block_kv.shape)
-            if kv_cache is None:
+            if block_kv is None:
                 x = block(x, kv_cache=block_kv)
             else:
                 x, nkv = block(x, kv_cache=block_kv)
@@ -113,15 +113,10 @@ class GPT(nn.Module):
             if kv_cache is None:
                 logits, _ = self(idx[:, -self.config.context_length:], kv_cache=kv_cache) # B T C
             else:
-                # print("kv_cache shape", kv_cache.shape)
-                if torch.all(torch.isnan(kv_cache)) :
-                    # to initialize the cache, feed it all
-                    # print("kv all")
+                if torch.all(torch.isnan(kv_cache)) : # initialize the cache, feed it all
                     logits, _, kv_cache = self(idx[:, -self.config.context_length:], kv_cache=kv_cache) # B T C
-                else:
-                    # moving forward only need to pass the last one
-                    # print("kv last")
-                    logits, _, kv_cache = self(idx[:, -1:], kv_cache=kv_cache) # B T C
+                else: # cached everything else, only need to pass the last one
+                    logits, _, kv_cache = self(idx[:, -1:], kv_cache=kv_cache) # B T C 
             logits = logits[:, -1, :]   # get the last channel of the sequence. B 1 C
             probs = F.softmax(logits, dim=-1)   # softmax on the C
             idx_next = torch.multinomial(probs, num_samples=1)  # get the actual token based on the probs

@@ -35,14 +35,16 @@ class AttentionLayer(nn.Module):
 
     updated_kv = None
     if(kv_cache is not None):
-      if not(torch.all(torch.isnan(kv_cache))):
-        cached_k, cached_v = torch.unbind(kv_cache, dim=0)
-        keys = torch.cat([cached_k, keys], dim=2)
-        values = torch.cat([cached_v, values], dim=2)
+      if not(torch.all(torch.isnan(kv_cache))): # if it's not the first pass
+        # kv_cache shape here : 2, batch size, attn heads, ctx lenght, embd size
+        cached_k, cached_v = torch.unbind(kv_cache, dim=0) # shape: batch size, attn heads, ctx length, embd size
+        
+        # remember, `keys` and `values` here has only a timestep of 1
+        keys = torch.cat([cached_k, keys], dim=2) # batch size, attn heads, ctx length, embd size
+        values = torch.cat([cached_v, values], dim=2) # batch size, attn heads, ctx length, embd size
         # print("splitted kv shapes", cached_k.shape, cached_v.shape, end="")
         # print("original kv", keys.shape, values.shape)
       updated_kv = torch.stack([keys[:, :, 1:, :], values[:, :, 1:, :]], dim=0)
-
 
     # B, nh, T, head_size @ B, nh, head_size, T = B, nh, T, T
     att_weights = (queries @ keys.transpose(-2,-1)) * (1.0 / math.sqrt(keys.size(-1))) # B, nh, T, T
