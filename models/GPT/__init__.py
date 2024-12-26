@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
+from memory_profiler import profile
+
 from models.shared_blocks.DecoderBlock import DecoderBlock
 from models.shared_blocks.PositionalEncoding import PositionalEncoding
 
@@ -88,6 +90,7 @@ class GPT(nn.Module):
         else:
             return logits, loss
 
+    @profile
     def generate(self, idx, max_new_tokens=50, use_kv_cache=False):
         # idx : sequence of tokens
         # generate max_new_tokens times

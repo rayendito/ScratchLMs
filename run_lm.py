@@ -173,7 +173,7 @@ if __name__ == "__main__":
     seed_encoded = tokenizer(seed).to(device)
     
     # generating (25 new tokens) and printing
-    result = model.generate(seed_encoded, max_new_tokens=3, use_kv_cache=False)
+    result = model.generate(seed_encoded, max_new_tokens=300, use_kv_cache=True)
     result = tokenizer.decode(result)
     print(result)
     # print(result[0])

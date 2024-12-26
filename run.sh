@@ -1,1 +1,1 @@
-python run_lm.py --architecture gpt --mono_data_path input.txt --token_strategy 'char' # --para_data_dir spa_mt
+python -m memory_profiler run_lm.py --architecture gpt --mono_data_path input.txt --token_strategy 'char' # --para_data_dir spa_mt

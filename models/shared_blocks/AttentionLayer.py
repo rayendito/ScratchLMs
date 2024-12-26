@@ -1,6 +1,8 @@
 import torch
 import math
 import torch.nn as nn
+
+from memory_profiler import profile
 from torch.nn import functional as F
 
 # DEFAULT: Causal self attention (masked with tril, attend to self)
@@ -19,6 +21,7 @@ class AttentionLayer(nn.Module):
 
     self.device = config.device
 
+  @profile
   def forward(self, x, cross_attn_key = None, cross_attn_value = None, kv_cache=None):
     B, T, C = x.shape # B T C
     queries, keys, values = self.c_attn(x).split(self.config.embedding_size, dim=-1)
